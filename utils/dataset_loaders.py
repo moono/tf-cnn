@@ -33,9 +33,9 @@ def load_dataset(dataset_name):
     testset['images'] = preprocess_images(x_test)
     testset['labels'] = preprocess_labels(y_test)
 
-    # parse input size of dataset
-    input_size = x_test.shape[1]
-    return trainset, testset, input_size
+    # parse input shape of dataset
+    input_shape = testset['images'].shape[1:]
+    return trainset, testset, input_shape
 
 
 def main():
