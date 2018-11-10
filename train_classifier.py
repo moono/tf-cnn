@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from utils.helpers import get_proper_fn
 from utils.dataset_loaders import load_dataset
-from utils.tf_estimator_fn_collection import input_fn, model_fn
+from utils.classifier_fns import input_fn, model_fn
 
 
 tf.logging.set_verbosity(tf.logging.INFO)
