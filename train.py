@@ -10,7 +10,7 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 # arguments parser
 parser = argparse.ArgumentParser(description='', allow_abbrev=False)
-parser.add_argument('--network_module', help='', default='network-resnet')
+parser.add_argument('--network_module', help='', default='resnet.network_resnet')
 parser.add_argument('--network_name', help='', default='resnet29')
 parser.add_argument('--dataset_name', help='', default='cifar10')
 parser.add_argument('--batch_size', help='', default=128, type=int)
@@ -135,9 +135,9 @@ def model_fn(features, labels, mode, params):
 
 def train():
     # parse arguments
-    network_module = args['network_module'].replace('-', '_')
-    network_name = args['network_name'].replace('-', '_')
-    dataset_name = args['dataset_name'].replace('-', '_')
+    network_module = args['network_module']
+    network_name = args['network_name']
+    dataset_name = args['dataset_name']
     batch_size = args['batch_size']
     learning_rate = args['learning_rate']
 
