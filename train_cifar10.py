@@ -3,7 +3,7 @@ import argparse
 import tensorflow as tf
 
 from utils.helpers import get_proper_fn
-from dataset_cifar10 import load_cifar10
+from dataset_loaders import load_cifar10
 from input_fn_cifar10 import input_fn
 from model_cifar10 import model_fn
 
@@ -12,7 +12,6 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 # arguments parser
 parser = argparse.ArgumentParser(description='tf-cnn with graph execution parser', allow_abbrev=False)
-parser.add_argument('--dataset_path', help='dataset path', default='/mnt/my_data/image_data/cifar-10-batches-py')
 parser.add_argument('--network_name', help='network name', default='resnet-cifar10')
 parser.add_argument('--batch_size', help='batch size', default=128, type=int)
 parser.add_argument('--learning_rate', help='learning rate', default=0.1, type=float)
@@ -32,7 +31,7 @@ def train():
     model_dir = os.path.join('/tmp', 'cifar10', network_name)
 
     # grab data
-    trainset, testset = load_cifar10(args['dataset_path'])
+    trainset, testset = load_cifar10()
 
     # create run config for estimator
     run_config = tf.estimator.RunConfig(save_checkpoints_secs=1800, keep_checkpoint_max=2)

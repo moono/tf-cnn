@@ -59,11 +59,11 @@ def input_fn(cifar10_images, cifar10_labels, batch_size, is_training, debug_inpu
 def main():
     import numpy as np
     from matplotlib import pyplot as plt
-    from dataset_cifar10 import load_cifar10
+    from dataset_loaders import load_cifar10
 
     batch_size = 4
     is_training = True
-    trainset, testset = load_cifar10('/mnt/my_data/image_data/cifar-10-batches-py')
+    trainset, testset = load_cifar10()
     features, labels = input_fn(testset['images'], testset['labels'], batch_size, is_training, debug_input_fn=True)
 
     with tf.Session() as sess:
