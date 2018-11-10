@@ -60,7 +60,7 @@ def model_fn(features, labels, mode, params):
     # parse parameters
     images = features['images']
     network_fn = params['network_fn']
-    n_classes = 10
+    n_classes = params['n_classes']
     weight_decay = 1e-4
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
@@ -124,7 +124,7 @@ def main():
 
     batch_size = 4
     is_training = True
-    trainset, testset, input_shape = load_dataset('mnist')
+    trainset, testset, input_shape, n_classes = load_dataset('mnist')
     features, labels = input_fn(testset['images'], testset['labels'], input_shape,
                                 batch_size, is_training, debug_input_fn=True)
 

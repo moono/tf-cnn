@@ -34,8 +34,10 @@ def load_dataset(dataset_name):
     testset['labels'] = preprocess_labels(y_test)
 
     # parse input shape of dataset
-    input_shape = testset['images'].shape[1:]
-    return trainset, testset, input_shape
+    input_shape = trainset['images'].shape[1:]
+    n_unique_classes = np.unique(trainset['labels'])
+    n_classes = n_unique_classes.shape[0]
+    return trainset, testset, input_shape, n_classes
 
 
 def main():
@@ -44,10 +46,10 @@ def main():
     # cifar100
     # fashion_mnist
     # mnist
-    trainset, testset, input_size = load_dataset('cifar10')
-    trainset, testset, input_size = load_dataset('cifar100')
-    trainset, testset, input_size = load_dataset('fashion_mnist')
-    trainset, testset, input_size = load_dataset('mnist')
+    trainset, testset, input_size, n_classes = load_dataset('cifar10')
+    trainset, testset, input_size, n_classes = load_dataset('cifar100')
+    trainset, testset, input_size, n_classes = load_dataset('fashion_mnist')
+    trainset, testset, input_size, n_classes = load_dataset('mnist')
     return
 
 

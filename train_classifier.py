@@ -13,7 +13,7 @@ tf.logging.set_verbosity(tf.logging.INFO)
 parser = argparse.ArgumentParser(description='', allow_abbrev=False)
 parser.add_argument('--network_module', help='', default='resnet.network_resnet')
 parser.add_argument('--network_name', help='', default='resnet29')
-parser.add_argument('--dataset_name', help='', default='cifar10')
+parser.add_argument('--dataset_name', help='', default='cifar100')
 parser.add_argument('--batch_size', help='', default=128, type=int)
 parser.add_argument('--learning_rate', help='', default=0.1, type=float)
 args = vars(parser.parse_args())
@@ -34,7 +34,7 @@ def train():
     model_dir = os.path.join('/tmp', 'study', dataset_name, network_module, network_name)
 
     # grab data
-    trainset, testset, input_size = load_dataset(dataset_name)
+    trainset, testset, input_size, n_classes = load_dataset(dataset_name)
 
     # create run config for estimator
     run_config = tf.estimator.RunConfig(save_checkpoints_secs=1800, keep_checkpoint_max=2)
@@ -46,6 +46,7 @@ def train():
         config=run_config,
         params={
             'network_fn': network_fn,
+            'n_classes': n_classes,
             'learning_rate': learning_rate,
         },
         warm_start_from=None,
