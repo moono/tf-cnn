@@ -31,7 +31,7 @@ def train():
     network_fn = get_proper_fn(network_module, network_name)
 
     # set model_dir
-    model_dir = os.path.join('/tmp', dataset_name, network_module, network_name)
+    model_dir = os.path.join('/tmp', 'study', dataset_name, network_module, network_name)
 
     # grab data
     trainset, testset, input_size = load_dataset(dataset_name)
