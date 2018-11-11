@@ -61,7 +61,7 @@ def model_fn(features, labels, mode, params):
     images = features['images']
     network_fn = params['network_fn']
     n_classes = params['n_classes']
-    weight_decay = 1e-4
+    weight_decay = params['weight_decay']
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
     # build networks
@@ -85,7 +85,7 @@ def model_fn(features, labels, mode, params):
     loss += tf.losses.get_regularization_loss()
 
     # compute evaluation metric
-    accuracy = tf.metrics.accuracy(labels=labels, predictions=predicted_class, name='accuracy_op')
+    accuracy = tf.metrics.accuracy(labels=labels, predictions=predicted_class, name='acc_op')
     tf.summary.scalar('accuracy', accuracy[1])  # during training
 
     # ================================

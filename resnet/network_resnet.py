@@ -3,8 +3,7 @@ import tensorflow as tf
 from resnet.resnet_layers import bottleneck_residual_block_v2
 
 
-# resnet29
-def resnet29(images, n_classes, is_training, weight_decay):
+def resnet83(images, n_classes, is_training, weight_decay):
     n_layers = [9, 9, 9]
 
     # stage 1: [32, 32, 16]
