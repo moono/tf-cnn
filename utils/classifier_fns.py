@@ -69,16 +69,32 @@ def model_fn(features, labels, mode, params):
 
     # get predicted class
     predicted_class = tf.cast(tf.argmax(logits, axis=1, name='predicted_class'), dtype=tf.int32)
+    predictions = {
+        'predicted_class': predicted_class,
+        'probabilities': tf.nn.softmax(logits),
+    }
+
+    # export specs
+    # 1. export output must be one of tf.estimator.export. ... class NOT a Tensor
+    # 2. multiple tf.estimator.export.PredictOutput() throws error like:
+    #   Multiple export_outputs were provided, but none of them is specified as the default.
+    #   Do this by naming one of them with signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY.
+    #   => duplicate 'output_class' with signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+    output_logit = tf.identity(logits, name='output_logit')
+    output_class = tf.identity(predicted_class, name='output_class')
+
+    default_signature_def_key = tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+    export_outputs = {
+        default_signature_def_key: tf.estimator.export.PredictOutput(output_class),
+        'output_logit': tf.estimator.export.PredictOutput(output_logit),
+        'output_class': tf.estimator.export.PredictOutput(output_class),
+    }
 
     # ================================
     # prediction mode
     # ================================
     if mode == tf.estimator.ModeKeys.PREDICT:
-        predictions = {
-            'class_id': predicted_class,
-            'probabilities': tf.nn.softmax(logits),
-        }
-        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions, export_outputs=export_outputs)
 
     # compute loss
     loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
@@ -87,12 +103,16 @@ def model_fn(features, labels, mode, params):
     # compute evaluation metric
     accuracy = tf.metrics.accuracy(labels=labels, predictions=predicted_class, name='acc_op')
     tf.summary.scalar('accuracy', accuracy[1])  # during training
+    metrics = {
+        'accuracy': accuracy,
+    }
 
     # ================================
     # evaluation mode
     # ================================
     if mode == tf.estimator.ModeKeys.EVAL:
-        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops={'accuracy': accuracy})
+        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=metrics, predictions=predictions,
+                                          export_outputs=export_outputs)
 
     # ================================
     # training mode
@@ -112,7 +132,8 @@ def model_fn(features, labels, mode, params):
 
     with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
         train_ops = optimizer.minimize(loss=loss, global_step=global_step)
-    return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_ops, training_hooks=[logging_hook])
+    return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_ops, training_hooks=[logging_hook],
+                                      eval_metric_ops=metrics, predictions=predictions, export_outputs=export_outputs)
 # ======================================================================================================================
 
 

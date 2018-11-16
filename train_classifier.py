@@ -5,6 +5,7 @@ import tensorflow as tf
 from utils.helpers import get_proper_fn
 from utils.dataset_loaders import load_dataset
 from utils.classifier_fns import input_fn, model_fn
+from utils.best_checkpoint_exporter import BestCheckpointExporter
 
 
 tf.logging.set_verbosity(tf.logging.INFO)
@@ -13,11 +14,22 @@ tf.logging.set_verbosity(tf.logging.INFO)
 parser = argparse.ArgumentParser(description='', allow_abbrev=False)
 parser.add_argument('--network_module', help='', default='resnet.network_resnet')
 parser.add_argument('--network_name', help='', default='resnet83')
-parser.add_argument('--dataset_name', help='', default='cifar100')
+parser.add_argument('--dataset_name', help='', default='mnist')
 parser.add_argument('--batch_size', help='', default=256, type=int)
 parser.add_argument('--learning_rate', help='', default=0.1, type=float)
 parser.add_argument('--weight_decay', help='', default=1e-4, type=float)
 args = vars(parser.parse_args())
+
+
+def best_exporter_compare_fn(best_eval_result, current_eval_result):
+    default_key = 'accuracy'
+    if not best_eval_result or default_key not in best_eval_result:
+        raise ValueError('best_eval_result cannot be empty or no mean_iou is found in it.')
+
+    if not current_eval_result or default_key not in current_eval_result:
+        raise ValueError('current_eval_result cannot be empty or no mean_iou is found in it.')
+
+    return best_eval_result[default_key] < current_eval_result[default_key]
 
 
 def train():
@@ -73,6 +85,9 @@ def train():
         run_every_steps=None
     )
 
+    # set best model exporter
+    best_model_exporter = BestCheckpointExporter(compare_fn=best_exporter_compare_fn, num_to_keep=1)
+
     # start training...
     train_spec = tf.estimator.TrainSpec(
         input_fn=lambda: input_fn(trainset['images'], trainset['labels'], input_size, batch_size, True),
@@ -81,7 +96,8 @@ def train():
     )
     eval_spec = tf.estimator.EvalSpec(
         input_fn=lambda: input_fn(testset['images'], testset['labels'], input_size, 100, False),
-        throttle_secs=60*5,
+        exporters=best_model_exporter,
+        throttle_secs=60,
     )
 
     tf.estimator.train_and_evaluate(model, train_spec, eval_spec)
