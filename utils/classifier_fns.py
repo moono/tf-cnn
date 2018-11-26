@@ -18,12 +18,12 @@ def preprocess_fn(image, label, input_shape, is_training):
     return image, label
 
 
-def input_fn(images, labels, input_shape, batch_size, is_training, debug_input_fn=False):
+def input_fn(images, labels, input_shape, epochs, batch_size, is_training, debug_input_fn=False):
     dataset = tf.data.Dataset.from_tensor_slices((images, labels))
 
     # shuffle & repeat on training mode
     if is_training:
-        dataset = dataset.shuffle(10000).repeat()
+        dataset = dataset.shuffle(10000).repeat(epochs)
 
     # preprocessing jobs
     dataset = dataset.apply(tf.contrib.data.map_and_batch(
@@ -143,11 +143,12 @@ def main():
     from matplotlib import pyplot as plt
     from utils.dataset_loaders import load_dataset
 
+    epochs = None
     batch_size = 4
     is_training = True
     trainset, testset, input_shape, n_classes = load_dataset('mnist')
-    features, labels = input_fn(testset['images'], testset['labels'], input_shape,
-                                batch_size, is_training, debug_input_fn=True)
+    features, labels = input_fn(testset['images'], testset['labels'], input_shape, epochs, batch_size, is_training,
+                                debug_input_fn=True)
 
     with tf.Session() as sess:
         while True:
@@ -166,6 +167,7 @@ def main():
                 print(input_labels.shape)
 
                 sample_image = input_images[0, :, :, :]
+                sample_image = np.squeeze(sample_image, axis=-1) if sample_image.shape[2] == 1 else sample_image
                 sample_label = input_labels[0]
                 print(sample_label)
                 plt.imshow(sample_image)

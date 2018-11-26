@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser(description='', allow_abbrev=False)
 parser.add_argument('--network_module', help='', default='resnet.network_resnet')
 parser.add_argument('--network_name', help='', default='resnet83')
 parser.add_argument('--dataset_name', help='', default='mnist')
+parser.add_argument('--epochs', help='', default=0, type=int)
 parser.add_argument('--batch_size', help='', default=256, type=int)
 parser.add_argument('--learning_rate', help='', default=0.1, type=float)
 parser.add_argument('--weight_decay', help='', default=1e-4, type=float)
@@ -37,6 +38,7 @@ def train():
     network_module = args['network_module']
     network_name = args['network_name']
     dataset_name = args['dataset_name']
+    epochs = None if args['epochs'] == 0 else args['epochs']
     batch_size = args['batch_size']
     learning_rate = args['learning_rate']
     weight_decay = args['weight_decay']
@@ -90,12 +92,12 @@ def train():
 
     # start training...
     train_spec = tf.estimator.TrainSpec(
-        input_fn=lambda: input_fn(trainset['images'], trainset['labels'], input_size, batch_size, True),
+        input_fn=lambda: input_fn(trainset['images'], trainset['labels'], input_size, epochs, batch_size, True),
         max_steps=None,
         hooks=[stop_hook_loss, stop_hook_accuracy]
     )
     eval_spec = tf.estimator.EvalSpec(
-        input_fn=lambda: input_fn(testset['images'], testset['labels'], input_size, 100, False),
+        input_fn=lambda: input_fn(testset['images'], testset['labels'], input_size, 1, 100, False),
         exporters=best_model_exporter,
         throttle_secs=60,
     )
