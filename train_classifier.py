@@ -14,7 +14,7 @@ tf.logging.set_verbosity(tf.logging.INFO)
 parser = argparse.ArgumentParser(description='', allow_abbrev=False)
 parser.add_argument('--network_module', help='', default='resnet.network_resnet')
 parser.add_argument('--network_name', help='', default='resnet83')
-parser.add_argument('--dataset_name', help='', default='mnist')
+parser.add_argument('--dataset_name', help='', default='cifar10')
 parser.add_argument('--epochs', help='', default=0, type=int)
 parser.add_argument('--batch_size', help='', default=256, type=int)
 parser.add_argument('--learning_rate', help='', default=0.1, type=float)
@@ -53,7 +53,7 @@ def train():
     trainset, testset, input_size, n_classes = load_dataset(dataset_name)
 
     # create run config for estimator
-    run_config = tf.estimator.RunConfig(keep_checkpoint_max=2)
+    run_config = tf.estimator.RunConfig(keep_checkpoint_max=2, save_checkpoints_steps=2000)
 
     # create the Estimator
     model = tf.estimator.Estimator(
@@ -88,7 +88,7 @@ def train():
     )
 
     # set best model exporter
-    best_model_exporter = BestCheckpointExporter(compare_fn=best_exporter_compare_fn, num_to_keep=1)
+    best_model_exporter = BestCheckpointExporter(compare_fn=best_exporter_compare_fn, num_to_keep=2)
 
     # start training...
     train_spec = tf.estimator.TrainSpec(

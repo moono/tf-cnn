@@ -1,6 +1,7 @@
 import os
 import glob
 import shutil
+import pprint
 import tensorflow as tf
 from tensorflow.python.estimator.canned import metric_keys
 
@@ -46,12 +47,21 @@ class BestCheckpointExporter(tf.estimator.Exporter):
         self._best_eval_result = None
         self._best_checkpoints_path = None
         self._best_checkpoint_steps = list()
+        self._best_checkpoint_history = dict()
 
     @property
     def name(self):
         return self._name
 
     def export(self, estimator, export_path, checkpoint_path, eval_result, is_the_final_export):
+        '''
+        :param estimator: estimator object
+        :param export_path: == os.path.join(model_dir, 'export', self.name directory)
+        :param checkpoint_path: == os.path.join(model_dir, '{:s}.ckpt-{:d}'.format(estimator_model_name, step))
+        :param eval_result: eval_result returned by EstimatorSpec (loss is always included)
+        :param is_the_final_export:
+        :return:
+        '''
         export_result = None
 
         # initial result
@@ -61,6 +71,7 @@ class BestCheckpointExporter(tf.estimator.Exporter):
 
             # reset
             self._best_checkpoint_steps = list()
+            self._best_checkpoint_history = dict()
 
             # get model_dir
             self._model_dir = estimator.model_dir
@@ -70,59 +81,49 @@ class BestCheckpointExporter(tf.estimator.Exporter):
             if not os.path.exists(self._best_checkpoints_path):
                 os.makedirs(self._best_checkpoints_path)
 
-            # find first best result == current result
-            full_event_file_pattern = os.path.join(self._model_dir, self._event_file_pattern)
-            self._best_eval_result = self._get_best_eval_result(full_event_file_pattern)
-
-            # copy current checkpoint
-            self._copy_checkpoint(checkpoint_path)
+            # update
+            self._update(checkpoint_path, eval_result)
 
         # compare every time new eval result comes in and save if neccessary
         elif self._compare_fn(self._best_eval_result, eval_result):
             tf.logging.info('Performing best model copying.')
-            self._best_eval_result = eval_result
 
-            # remove old files if needed
-            if self._count_number_of_checkpoint_files() >= self._num_to_keep:
-                tf.logging.info('Removing oldest best checkpoint file.')
-                self._remove_last_best_checkpoint_files()
-
-            # copy current checkpoint
-            self._copy_checkpoint(checkpoint_path)
+            # update
+            self._update(checkpoint_path, eval_result)
 
         return export_result
 
-    def _get_best_eval_result(self, event_files):
-        if not event_files:
-            return None
-
-        best_eval_result = None
-        for event_file in tf.gfile.Glob(os.path.join(event_files)):
-            for event in tf.train.summary_iterator(event_file):
-                if event.HasField('summary'):
-                    event_eval_result = {}
-                    for value in event.summary.value:
-                        if value.HasField('simple_value'):
-                            event_eval_result[value.tag] = value.simple_value
-                    if event_eval_result:
-                        if best_eval_result is None or self._compare_fn(best_eval_result, event_eval_result):
-                            best_eval_result = event_eval_result
-        return best_eval_result
-
-    def _copy_checkpoint(self, checkpoint_path):
-        # add to list
+    def _update(self, checkpoint_path, eval_result):
+        # extract current step
         current_step = self._extract_checkpoint_step(checkpoint_path)
+
+        # update best eval result
+        self._best_eval_result = eval_result
+
+        # remove old files if needed
+        n_saved_checkpoints = len(self._best_checkpoint_steps)
+        if n_saved_checkpoints >= self._num_to_keep:
+            tf.logging.info('Removing oldest best checkpoint file.')
+            self._remove_last_best_checkpoint_files()
+
+        # copy current checkpoint
+        self._copy_checkpoint(checkpoint_path)
+
+        # update best checkpoint step
         self._best_checkpoint_steps.append(current_step)
 
+        # update best checkpoint history
+        self._best_checkpoint_history[str(current_step)] = eval_result
+
+        # print history
+        pprint.pprint(self._best_checkpoint_history, width=1)
+        return
+
+    def _copy_checkpoint(self, checkpoint_path):
         related_files = glob.glob('{:s}.*'.format(checkpoint_path))
         for file in related_files:
             shutil.copy(file, self._best_checkpoints_path)
         return
-
-    def _count_number_of_checkpoint_files(self):
-        related_files = glob.glob(os.path.join(self._best_checkpoints_path, '*.ckpt*'))
-        total_cnt = len(related_files) // 3
-        return total_cnt
 
     def _remove_last_best_checkpoint_files(self):
         last_best_checkpoint_step = self._best_checkpoint_steps[0]
