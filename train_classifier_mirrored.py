@@ -5,7 +5,6 @@ import tensorflow as tf
 from utils.helpers import get_proper_fn
 from utils.dataset_loaders import load_dataset
 from utils.classifier_fns import input_fn, model_fn
-from utils.best_checkpoint_exporter import BestCheckpointExporter
 
 
 tf.logging.set_verbosity(tf.logging.INFO)
@@ -15,22 +14,11 @@ parser = argparse.ArgumentParser(description='', allow_abbrev=False)
 parser.add_argument('--network_module', help='', default='resnet.network_resnet')
 parser.add_argument('--network_name', help='', default='resnet83')
 parser.add_argument('--dataset_name', help='', default='cifar10')
-parser.add_argument('--epochs', help='', default=0, type=int)
+parser.add_argument('--epochs', help='', default=50, type=int)
 parser.add_argument('--batch_size', help='', default=256, type=int)
 parser.add_argument('--learning_rate', help='', default=0.1, type=float)
-parser.add_argument('--weight_decay', help='', default=0.0, type=float)
+parser.add_argument('--weight_decay', help='', default=None, type=float)
 args = vars(parser.parse_args())
-
-
-def best_exporter_compare_fn(best_eval_result, current_eval_result):
-    default_key = 'accuracy'
-    if not best_eval_result or default_key not in best_eval_result:
-        raise ValueError('best_eval_result cannot be empty or no mean_iou is found in it.')
-
-    if not current_eval_result or default_key not in current_eval_result:
-        raise ValueError('current_eval_result cannot be empty or no mean_iou is found in it.')
-
-    return best_eval_result[default_key] < current_eval_result[default_key]
 
 
 def train():
@@ -38,10 +26,10 @@ def train():
     network_module = args['network_module']
     network_name = args['network_name']
     dataset_name = args['dataset_name']
-    epochs = None if args['epochs'] == 0 else args['epochs']
+    epochs = args['epochs']
     batch_size = args['batch_size']
     learning_rate = args['learning_rate']
-    weight_decay = None if args['weight_decay'] == 0.0 else args['weight_decay']
+    weight_decay = args['weight_decay']
 
     # get testing network
     network_fn = get_proper_fn(network_module, network_name)
@@ -74,20 +62,23 @@ def train():
         warm_start_from=None,
     )
 
-    # set best model exporter
-    best_model_exporter = BestCheckpointExporter(compare_fn=best_exporter_compare_fn, num_to_keep=2)
-
     # start training...
-    train_spec = tf.estimator.TrainSpec(
-        input_fn=lambda: input_fn(trainset['images'], trainset['labels'], input_size, epochs, batch_size, True),
-        max_steps=None,
-    )
-    eval_spec = tf.estimator.EvalSpec(
-        input_fn=lambda: input_fn(testset['images'], testset['labels'], input_size, 1, 100, False),
-        exporters=best_model_exporter,
-    )
-
-    tf.estimator.train_and_evaluate(model, train_spec, eval_spec)
+    if epochs is None:
+        while True:
+            model.train(
+                input_fn=lambda: input_fn(trainset['images'], trainset['labels'], input_size, 1, batch_size, True),
+            )
+            model.evaluate(
+                input_fn=lambda: input_fn(testset['images'], testset['labels'], input_size, 1, 100, False)
+            )
+    else:
+        for e in range(epochs):
+            model.train(
+                input_fn=lambda: input_fn(trainset['images'], trainset['labels'], input_size, 1, batch_size, True),
+            )
+            model.evaluate(
+                input_fn=lambda: input_fn(testset['images'], testset['labels'], input_size, 1, 100, False)
+            )
     return
 
 
