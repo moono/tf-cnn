@@ -2,8 +2,8 @@ import tensorflow as tf
 
 
 # residual unit with 2 sub layers
-def residual_block_v1(x, in_filter, out_filter, stage, block, is_training, strides, scale=0.0):
-    l2_regularizer = tf.contrib.layers.l2_regularizer(scale=scale)
+def residual_block_v1(x, in_filter, out_filter, stage, block, is_training, strides, weight_decay=0.0):
+    l2_regularizer = tf.contrib.layers.l2_regularizer(weight_decay) if weight_decay is not None else None
 
     with tf.variable_scope('block{:d}{:s}'.format(stage, block)):
         original_x = x
@@ -30,8 +30,8 @@ def residual_block_v1(x, in_filter, out_filter, stage, block, is_training, strid
 
 
 # residual unit with 2 sub layers with preactivation
-def residual_block_v2(x, in_filter, out_filter, stage, block, is_training, strides, scale=0.0):
-    l2_regularizer = tf.contrib.layers.l2_regularizer(scale=scale)
+def residual_block_v2(x, in_filter, out_filter, stage, block, is_training, strides, weight_decay=0.0):
+    l2_regularizer = tf.contrib.layers.l2_regularizer(weight_decay) if weight_decay is not None else None
 
     with tf.variable_scope('block{:d}{:s}'.format(stage, block)):
         # conv 3x3
@@ -58,8 +58,8 @@ def residual_block_v2(x, in_filter, out_filter, stage, block, is_training, strid
 
 
 # bottleneck residual unit with 3 sub layers with preactivation
-def bottleneck_residual_block_v2(x, in_filter, out_filter, stage, block, is_training, strides, scale=0.0):
-    l2_regularizer = tf.contrib.layers.l2_regularizer(scale=scale)
+def bottleneck_residual_block_v2(x, in_filter, out_filter, stage, block, is_training, strides, weight_decay=0.0):
+    l2_regularizer = tf.contrib.layers.l2_regularizer(weight_decay) if weight_decay is not None else None
     bottleneck_filter = out_filter // 4
 
     with tf.variable_scope('block{:d}{:s}'.format(stage, block)):
