@@ -11,14 +11,15 @@ from utils.best_checkpoint_exporter import BestCheckpointExporter
 tf.logging.set_verbosity(tf.logging.INFO)
 
 # arguments parser
-parser = argparse.ArgumentParser(description='', allow_abbrev=False)
-parser.add_argument('--network_module', help='', default='resnet.network_resnet')
-parser.add_argument('--network_name', help='', default='resnet83')
-parser.add_argument('--dataset_name', help='', default='cifar10')
-parser.add_argument('--epochs', help='', default=0, type=int)
-parser.add_argument('--batch_size', help='', default=256, type=int)
-parser.add_argument('--learning_rate', help='', default=0.1, type=float)
-parser.add_argument('--weight_decay', help='', default=1e-4, type=float)
+parser = argparse.ArgumentParser(description='')
+parser.add_argument('--save_path_base', default='/tmp')
+parser.add_argument('--network_module', default='resnet.network_resnet')
+parser.add_argument('--network_name', default='resnet83')
+parser.add_argument('--dataset_name', default='cifar10')
+parser.add_argument('--epochs', default=0, type=int)
+parser.add_argument('--batch_size', default=256, type=int)
+parser.add_argument('--learning_rate', default=0.1, type=float)
+parser.add_argument('--weight_decay', default=1e-4, type=float)
 args = vars(parser.parse_args())
 
 
@@ -35,6 +36,7 @@ def best_exporter_compare_fn(best_eval_result, current_eval_result):
 
 def train():
     # parse arguments
+    save_path_base = args['save_path_base']
     network_module = args['network_module']
     network_name = args['network_name']
     dataset_name = args['dataset_name']
@@ -47,7 +49,7 @@ def train():
     network_fn = get_proper_fn(network_module, network_name)
 
     # set model_dir
-    model_dir = os.path.join('./models', 'cnn', dataset_name, network_name)
+    model_dir = os.path.join(save_path_base, 'cnn', dataset_name, network_name)
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
 

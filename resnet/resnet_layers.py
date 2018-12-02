@@ -2,21 +2,17 @@ import tensorflow as tf
 
 
 # residual unit with 2 sub layers
-def residual_block_v1(x, in_filter, out_filter, stage, block, is_training, strides, weight_decay=0.0):
-    l2_regularizer = tf.contrib.layers.l2_regularizer(weight_decay) if weight_decay is not None else None
-
+def residual_block_v1(x, in_filter, out_filter, stage, block, is_training, strides, l2_reg=None):
     with tf.variable_scope('block{:d}{:s}'.format(stage, block)):
         original_x = x
 
         # conv 3x3
-        x = tf.layers.conv2d(x, out_filter, 3, strides, padding='same', use_bias=False,
-                             kernel_regularizer=l2_regularizer)
+        x = tf.layers.conv2d(x, out_filter, 3, strides, padding='same', use_bias=False, kernel_regularizer=l2_reg)
         x = tf.layers.batch_normalization(x, training=is_training)
         x = tf.nn.relu(x)
 
         # conv 3x3
-        x = tf.layers.conv2d(x, out_filter, 3, 1, padding='same', use_bias=False,
-                             kernel_regularizer=l2_regularizer)
+        x = tf.layers.conv2d(x, out_filter, 3, 1, padding='same', use_bias=False, kernel_regularizer=l2_reg)
         x = tf.layers.batch_normalization(x, training=is_training)
 
         # match spatial dimension with zero padding
@@ -30,22 +26,18 @@ def residual_block_v1(x, in_filter, out_filter, stage, block, is_training, strid
 
 
 # residual unit with 2 sub layers with preactivation
-def residual_block_v2(x, in_filter, out_filter, stage, block, is_training, strides, weight_decay=0.0):
-    l2_regularizer = tf.contrib.layers.l2_regularizer(weight_decay) if weight_decay is not None else None
-
+def residual_block_v2(x, in_filter, out_filter, stage, block, is_training, strides, l2_reg=None):
     with tf.variable_scope('block{:d}{:s}'.format(stage, block)):
         # conv 3x3
         x = tf.layers.batch_normalization(x, training=is_training)
         x = tf.nn.relu(x)
         original_x = x
-        x = tf.layers.conv2d(x, out_filter, 3, strides, padding='same', use_bias=False,
-                             kernel_regularizer=l2_regularizer)
+        x = tf.layers.conv2d(x, out_filter, 3, strides, padding='same', use_bias=False, kernel_regularizer=l2_reg)
 
         # conv 3x3
         x = tf.layers.batch_normalization(x, training=is_training)
         x = tf.nn.relu(x)
-        x = tf.layers.conv2d(x, out_filter, 3, 1, padding='same', use_bias=False,
-                             kernel_regularizer=l2_regularizer)
+        x = tf.layers.conv2d(x, out_filter, 3, 1, padding='same', use_bias=False, kernel_regularizer=l2_reg)
 
         # match spatial dimension with zero padding
         if in_filter != out_filter:
@@ -58,8 +50,7 @@ def residual_block_v2(x, in_filter, out_filter, stage, block, is_training, strid
 
 
 # bottleneck residual unit with 3 sub layers with preactivation
-def bottleneck_residual_block_v2(x, in_filter, out_filter, stage, block, is_training, strides, weight_decay=0.0):
-    l2_regularizer = tf.contrib.layers.l2_regularizer(weight_decay) if weight_decay is not None else None
+def bottleneck_residual_block_v2(x, in_filter, out_filter, stage, block, is_training, strides, l2_reg=None):
     bottleneck_filter = out_filter // 4
 
     with tf.variable_scope('block{:d}{:s}'.format(stage, block)):
@@ -67,25 +58,22 @@ def bottleneck_residual_block_v2(x, in_filter, out_filter, stage, block, is_trai
         x = tf.layers.batch_normalization(x, training=is_training)
         x = tf.nn.relu(x)
         original_x = x
-        x = tf.layers.conv2d(x, bottleneck_filter, 1, strides, padding='same', use_bias=False,
-                             kernel_regularizer=l2_regularizer)
+        x = tf.layers.conv2d(x, bottleneck_filter, 1, strides, padding='same', use_bias=False, kernel_regularizer=l2_reg)
 
         # conv 3x3
         x = tf.layers.batch_normalization(x, training=is_training)
         x = tf.nn.relu(x)
-        x = tf.layers.conv2d(x, bottleneck_filter, 3, 1, padding='same', use_bias=False,
-                             kernel_regularizer=l2_regularizer)
+        x = tf.layers.conv2d(x, bottleneck_filter, 3, 1, padding='same', use_bias=False, kernel_regularizer=l2_reg)
 
         # conv 1x1
         x = tf.layers.batch_normalization(x, training=is_training)
         x = tf.nn.relu(x)
-        x = tf.layers.conv2d(x, out_filter, 1, 1, padding='same', use_bias=False,
-                             kernel_regularizer=l2_regularizer)
+        x = tf.layers.conv2d(x, out_filter, 1, 1, padding='same', use_bias=False, kernel_regularizer=l2_reg)
 
         # match spatial dimension with conv2d
         if in_filter != out_filter:
             original_x = tf.layers.conv2d(original_x, out_filter, 1, strides, padding='same', use_bias=False,
-                                          kernel_regularizer=l2_regularizer)
+                                          kernel_regularizer=l2_reg)
 
         x = tf.add(x, original_x)
     return x

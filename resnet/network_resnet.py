@@ -4,29 +4,24 @@ from resnet.resnet_layers import bottleneck_residual_block_v2
 
 
 def resnet83(images, n_classes, is_training, weight_decay):
-    l2_regularizer = tf.contrib.layers.l2_regularizer(weight_decay) if weight_decay is not None else None
-
-    # n_filters = [64, 128, 256]
-    filter_start = 16
-    n_filters = [16, 32, 64]
+    l2_reg = None if weight_decay is None else tf.contrib.layers.l2_regularizer(weight_decay)
+    n_filters = [16, 16, 32, 64]
     n_layers = [9, 9, 9]
     n_strides = [1, 2, 2]
 
     # stage 0: initial conv
-    x = tf.layers.conv2d(images, filters=filter_start, kernel_size=3, strides=1, padding='same', use_bias=False,
-                         kernel_regularizer=l2_regularizer)
+    x = tf.layers.conv2d(images, n_filters[0], 3, 1, padding='same', use_bias=False, kernel_regularizer=l2_reg)
 
     # stack resblocks
-    prev_filter = filter_start
-    for stage, (f, l, s) in enumerate(zip(n_filters, n_layers, n_strides)):
+    prev_filter = n_filters[0]
+    for stage, (f, l, s) in enumerate(zip(n_filters[1:], n_layers, n_strides)):
         # stage indexing starts from 1
         stage += 1
         block = chr(ord('a'))
-        x = bottleneck_residual_block_v2(x, prev_filter, f, stage, block, is_training, strides=s,
-                                         weight_decay=weight_decay)
+        x = bottleneck_residual_block_v2(x, prev_filter, f, stage, block, is_training, strides=s, l2_reg=l2_reg)
         for ii in range(1, l):
             block = chr(ord(block) + 1)
-            x = bottleneck_residual_block_v2(x, f, f, stage, block, is_training, strides=1, weight_decay=weight_decay)
+            x = bottleneck_residual_block_v2(x, f, f, stage, block, is_training, strides=1, l2_reg=l2_reg)
         prev_filter = f
 
     # global average pooling
@@ -35,5 +30,5 @@ def resnet83(images, n_classes, is_training, weight_decay):
     x = tf.reduce_mean(x, axis=[1, 2])
 
     # fully connected layer
-    logits = tf.layers.dense(x, units=n_classes, kernel_regularizer=l2_regularizer)
+    logits = tf.layers.dense(x, units=n_classes, kernel_regularizer=l2_reg)
     return logits
