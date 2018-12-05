@@ -129,7 +129,8 @@ def model_fn(features, labels, mode, params):
 
     # prepare optimizer
     global_step = tf.train.get_or_create_global_step()
-    optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
+    # optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
 
     with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
         train_ops = optimizer.minimize(loss=loss, global_step=global_step)
