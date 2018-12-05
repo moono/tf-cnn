@@ -122,9 +122,10 @@ def model_fn(features, labels, mode, params):
     # additional parameters
     learning_rate = params['learning_rate']
 
-    # additional log
-    train_batch_accuracy = tf.reduce_mean(tf.cast(tf.equal(labels, predicted_class), tf.float32))
-    logging_hook = tf.train.LoggingTensorHook({'train_batch_accuracy': train_batch_accuracy}, every_n_iter=100)
+    # logging hook causes error on tf.contrib.distribute.MirroredStrategy()
+    # # additional log
+    # train_batch_accuracy = tf.reduce_mean(tf.cast(tf.equal(labels, predicted_class), tf.float32))
+    # logging_hook = tf.train.LoggingTensorHook({'train_batch_accuracy': train_batch_accuracy}, every_n_iter=100)
 
     # prepare optimizer
     global_step = tf.train.get_or_create_global_step()
@@ -132,7 +133,9 @@ def model_fn(features, labels, mode, params):
 
     with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
         train_ops = optimizer.minimize(loss=loss, global_step=global_step)
-    return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_ops, training_hooks=[logging_hook],
+    # return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_ops, training_hooks=[logging_hook],
+    #                                   eval_metric_ops=metrics, predictions=predictions, export_outputs=export_outputs)
+    return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_ops,
                                       eval_metric_ops=metrics, predictions=predictions, export_outputs=export_outputs)
 # ======================================================================================================================
 
